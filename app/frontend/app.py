@@ -14,6 +14,55 @@ REQUEST_TIMEOUT = int(os.environ.get("REQUEST_TIMEOUT", "15"))
 DEFAULT_CITY_A = "Tel Aviv"
 DEFAULT_CITY_B = "London"
 
+# Fallback when worker pod has not yet returned country_code / flag
+COUNTRY_NAME_TO_CODE = {
+    "ISRAEL": "IL",
+    "UKRAINE": "UA",
+    "THAILAND": "TH",
+    "UNITED KINGDOM": "GB",
+    "RUSSIA": "RU",
+    "FRANCE": "FR",
+    "GERMANY": "DE",
+    "SPAIN": "ES",
+    "ITALY": "IT",
+    "JAPAN": "JP",
+    "CHINA": "CN",
+    "INDIA": "IN",
+    "BRAZIL": "BR",
+    "AUSTRALIA": "AU",
+    "CANADA": "CA",
+    "NETHERLANDS": "NL",
+    "POLAND": "PL",
+    "TURKEY": "TR",
+    "EGYPT": "EG",
+    "GREECE": "GR",
+    "UNITED STATES": "US",
+    "UNITED ARAB EMIRATES": "AE",
+}
+
+
+def country_flag(country_code: str) -> str:
+    if not country_code or len(country_code) != 2 or not country_code.isalpha():
+        return "🌍"
+    code = country_code.upper()
+    return (
+        chr(0x1F1E6 + ord(code[0]) - ord("A"))
+        + chr(0x1F1E6 + ord(code[1]) - ord("A"))
+    )
+
+
+def enrich_weather(data: dict | None) -> dict | None:
+    """Ensure flag + country_code are set from worker or country name fallback."""
+    if not data or "error" in data:
+        return data
+    code = (data.get("country_code") or "").upper()
+    if not code:
+        code = COUNTRY_NAME_TO_CODE.get((data.get("country") or "").upper(), "")
+    if code:
+        data["country_code"] = code
+    data["flag"] = country_flag(code) if code else "🌍"
+    return data
+
 
 def get_weather(city: str) -> dict:
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
@@ -50,7 +99,7 @@ def get_weather(city: str) -> dict:
 
     connection.process_data_events(time_limit=REQUEST_TIMEOUT)
     connection.close()
-    return response.get("data", {"error": f"Timeout: no response in {REQUEST_TIMEOUT}s"})
+    return enrich_weather(response.get("data", {"error": f"Timeout: no response in {REQUEST_TIMEOUT}s"}))
 
 
 @app.route("/", methods=["GET", "POST"])

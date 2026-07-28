@@ -303,8 +303,8 @@
       <div class="card">
         {% if weather and 'error' not in weather %}
         <div class="card-label">{{ slot }}</div>
-        <div class="city-name">{{ weather.flag }} {{ weather.city }}</div>
-        <div class="country">{{ weather.country }}</div>
+        <div class="city-name">{{ weather.city }}</div>
+        <div class="country">{{ weather.flag }} {{ weather.country }}</div>
         <div class="temp">{{ weather.temperature }}°</div>
         <div class="condition">{{ weather.condition }}</div>
         <div class="meta">
