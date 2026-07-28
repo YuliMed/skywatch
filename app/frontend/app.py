@@ -11,6 +11,9 @@ RABBITMQ_USER = os.environ.get("RABBITMQ_USER", "user")
 RABBITMQ_PASS = os.environ.get("RABBITMQ_PASS", "password")
 REQUEST_TIMEOUT = int(os.environ.get("REQUEST_TIMEOUT", "15"))
 
+DEFAULT_CITY_A = "Tel Aviv"
+DEFAULT_CITY_B = "London"
+
 
 def get_weather(city: str) -> dict:
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
@@ -52,26 +55,44 @@ def get_weather(city: str) -> dict:
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    weather = None
-    city = None
+    city_a = DEFAULT_CITY_A
+    city_b = DEFAULT_CITY_B
+    weather_a = None
+    weather_b = None
     error = None
+    submitted = False
+
     if request.method == "POST":
-        city = request.form.get("city", "").strip()
-        if city:
-            try:
-                result = get_weather(city)
-                if "error" in result:
-                    error = result["error"]
-                else:
-                    weather = result
-            except Exception as exc:
-                error = f"Connection error: {exc}"
-    return render_template("index.html", weather=weather, city=city, error=error)
+        submitted = True
+        city_a = request.form.get("city_a", "").strip() or DEFAULT_CITY_A
+        city_b = request.form.get("city_b", "").strip() or DEFAULT_CITY_B
+        try:
+            weather_a = get_weather(city_a)
+            weather_b = get_weather(city_b)
+            errors = []
+            if weather_a and "error" in weather_a:
+                errors.append(f"{city_a}: {weather_a['error']}")
+            if weather_b and "error" in weather_b:
+                errors.append(f"{city_b}: {weather_b['error']}")
+            if errors:
+                error = " · ".join(errors)
+        except Exception as exc:
+            error = f"Connection error: {exc}"
+
+    return render_template(
+        "index.html",
+        city_a=city_a,
+        city_b=city_b,
+        weather_a=weather_a,
+        weather_b=weather_b,
+        error=error,
+        submitted=submitted,
+    )
 
 
 @app.route("/healthz")
 def healthz():
-    return {"status": "ok"}, 200
+    return {"status": "ok", "app": "raincheck"}, 200
 
 
 if __name__ == "__main__":
