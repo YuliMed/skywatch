@@ -1,7 +1,7 @@
 # SkyWatch — DevOps Course Project
 
-**Student:** Yariv Freifeld  
-**Repository:** https://github.com/yfreifeld/skywatch  
+**Student:** Yuli Med  
+**Repository:** https://github.com/YuliMed/skywatch  
 
 ---
 

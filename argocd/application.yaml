@@ -10,7 +10,7 @@ spec:
 
   source:
     # Replace with your actual GitHub repo URL
-    repoURL: https://github.com/yfreifeld/skywatch.git
+    repoURL: https://github.com/YuliMed/skywatch.git
     targetRevision: main
     path: helm/skywatch
     helm:

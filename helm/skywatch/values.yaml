@@ -2,7 +2,7 @@
 # CI updates these tags on every push to main.
 frontend:
   image:
-    repository: ghcr.io/yfreifeld/skywatch-frontend
+    repository: ghcr.io/YuliMed/skywatch-frontend
     tag: 42f8fd0
     pullPolicy: Always
   replicaCount: 1
@@ -19,7 +19,7 @@ frontend:
       memory: 256Mi
 worker:
   image:
-    repository: ghcr.io/yfreifeld/skywatch-worker
+    repository: ghcr.io/YuliMed/skywatch-worker
     tag: 42f8fd0
     pullPolicy: Always
   replicaCount: 2
