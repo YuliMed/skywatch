@@ -8,21 +8,22 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root[data-theme="light"] {
-      --bg-1: #e8f5e9;
-      --bg-2: #c8e6c9;
-      --bg-3: #a5d6a7;
-      --text: #1b4332;
-      --text-muted: #2d6a4f;
-      --accent: #2e7d32;
-      --accent-hover: #1b5e20;
-      --card-bg: rgba(255, 255, 255, 0.75);
-      --card-border: rgba(46, 125, 50, 0.35);
-      --input-bg: rgba(255, 255, 255, 0.9);
-      --input-border: #81c784;
-      --error-bg: rgba(198, 40, 40, 0.08);
-      --error-border: rgba(198, 40, 40, 0.4);
-      --error-text: #b71c1c;
-      --arch: #388e3c;
+      --bg-1: #b5cfc0;
+      --bg-2: #8fb89a;
+      --bg-3: #6b9e78;
+      --text: #0d2818;
+      --text-muted: #1b4332;
+      --accent: #1b5e20;
+      --accent-hover: #145214;
+      --card-bg: rgba(255, 255, 255, 0.92);
+      --card-border: rgba(27, 94, 32, 0.45);
+      --input-bg: #f1f8f2;
+      --input-border: #5a9e6a;
+      --error-bg: rgba(198, 40, 40, 0.1);
+      --error-border: rgba(198, 40, 40, 0.45);
+      --error-text: #9a1a1a;
+      --arch: #1b5e20;
+      --logo-badge: linear-gradient(145deg, #1b5e20, #2e7d32);
     }
 
     :root[data-theme="dark"] {
@@ -41,6 +42,7 @@
       --error-border: rgba(231, 76, 60, 0.4);
       --error-text: #ff8a80;
       --arch: #4fc3f7;
+      --logo-badge: linear-gradient(145deg, #1b263b, #415a77);
     }
 
     body {
@@ -83,6 +85,23 @@
       font-size: clamp(2.2rem, 6vw, 3.2rem);
       color: var(--accent);
       letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .logo-emoji {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--logo-badge);
+      border-radius: 14px;
+      padding: 0.12em 0.28em;
+      line-height: 1;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
+      font-size: 0.92em;
     }
 
     .subtitle {
@@ -257,7 +276,7 @@
     </div>
 
     <header class="hero">
-      <h1>🌧 RainCheck</h1>
+      <h1><span class="logo-emoji" aria-hidden="true">🌧</span> RainCheck</h1>
       <p class="subtitle">Compare weather side-by-side — async pipeline via RabbitMQ, K3s &amp; Open-Meteo</p>
       <p class="byline">Built by Yuli Med · DevOps course project</p>
     </header>
@@ -268,7 +287,7 @@
         <input type="text" id="city_a" name="city_a" placeholder="Tel Aviv" value="{{ city_a }}" autocomplete="off">
       </div>
       <div class="field">
-        <label for="city_b">City B</label>
+        <label for="city_b">City B 🇬🇧</label>
         <input type="text" id="city_b" name="city_b" placeholder="London" value="{{ city_b }}" autocomplete="off">
       </div>
       <button type="submit">Compare</button>
@@ -300,8 +319,8 @@
       </div>
       {% endmacro %}
 
-      {{ weather_card("City A", weather_a) }}
-      {{ weather_card("City B", weather_b) }}
+      {{ weather_card("City A 🇮🇱", weather_a) }}
+      {{ weather_card("City B 🇬🇧", weather_b) }}
     </div>
     {% endif %}
 
