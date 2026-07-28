@@ -3,7 +3,7 @@
 frontend:
   image:
     repository: ghcr.io/yulimed/skywatch-frontend
-    tag: e122667
+    tag: 8ee5ad9
     pullPolicy: Always
   replicaCount: 1
   port: 5000
@@ -20,7 +20,7 @@ frontend:
 worker:
   image:
     repository: ghcr.io/yulimed/skywatch-worker
-    tag: e122667
+    tag: 8ee5ad9
     pullPolicy: Always
   replicaCount: 2
   resources:
