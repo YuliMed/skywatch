@@ -18,6 +18,44 @@ RABBITMQ_PASS = os.environ.get("RABBITMQ_PASS", "password")
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
+# Normalize common spellings + optional ISO country hint for ambiguous names
+CITY_ALIASES = {
+    "kiev": ("Kyiv", "UA"),
+    "kyiv": ("Kyiv", "UA"),
+    "tel aviv": ("Tel Aviv", "IL"),
+    "tel-aviv": ("Tel Aviv", "IL"),
+    "bangkok": ("Bangkok", "TH"),
+    "london": ("London", "GB"),
+    "moscow": ("Moscow", "RU"),
+    "new york": ("New York", "US"),
+    "nyc": ("New York", "US"),
+}
+
+COUNTRY_NAMES = {
+    "IL": "Israel",
+    "UA": "Ukraine",
+    "GB": "United Kingdom",
+    "TH": "Thailand",
+    "RU": "Russia",
+    "US": "United States",
+    "FR": "France",
+    "DE": "Germany",
+    "ES": "Spain",
+    "IT": "Italy",
+    "JP": "Japan",
+    "CN": "China",
+    "IN": "India",
+    "BR": "Brazil",
+    "AU": "Australia",
+    "CA": "Canada",
+    "NL": "Netherlands",
+    "PL": "Poland",
+    "TR": "Turkey",
+    "EG": "Egypt",
+    "GR": "Greece",
+    "AE": "United Arab Emirates",
+}
+
 WMO_CODES = {
     0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
     45: "Fog", 48: "Icy fog", 51: "Light drizzle", 53: "Moderate drizzle",
@@ -28,18 +66,62 @@ WMO_CODES = {
 }
 
 
+def country_flag(country_code: str) -> str:
+    """ISO 3166-1 alpha-2 → flag emoji."""
+    if not country_code or len(country_code) != 2:
+        return "🌍"
+    code = country_code.upper()
+    if not code.isalpha():
+        return "🌍"
+    return chr(0x1F1E6 + ord(code[0]) - ord("A")) + chr(0x1F1E6 + ord(code[1]) - ord("A"))
+
+
+def country_display_name(country_code: str, fallback: str) -> str:
+    if country_code:
+        return COUNTRY_NAMES.get(country_code.upper(), fallback or country_code.upper())
+    return fallback or "Unknown"
+
+
+def resolve_city_query(city: str) -> tuple[str, str | None]:
+    key = city.strip().lower()
+    if key in CITY_ALIASES:
+        name, code = CITY_ALIASES[key]
+        return name, code
+    return city.strip(), None
+
+
+def pick_best_result(results: list, preferred_country: str | None) -> dict:
+    if preferred_country:
+        preferred = preferred_country.upper()
+        in_country = [r for r in results if r.get("country_code", "").upper() == preferred]
+        if in_country:
+            return max(in_country, key=lambda r: r.get("population") or 0)
+    return max(results, key=lambda r: r.get("population") or 0)
+
+
 def get_coordinates(city: str):
-    resp = requests.get(
-        GEOCODING_URL,
-        params={"name": city, "count": 1, "language": "en", "format": "json"},
-        timeout=10,
-    )
+    query, country_hint = resolve_city_query(city)
+    params = {"name": query, "count": 10, "language": "en", "format": "json"}
+    if country_hint:
+        params["countryCode"] = country_hint
+
+    resp = requests.get(GEOCODING_URL, params=params, timeout=10)
     resp.raise_for_status()
     data = resp.json()
-    if not data.get("results"):
+    results = data.get("results") or []
+    if not results:
         raise ValueError(f"City '{city}' not found")
-    r = data["results"][0]
-    return r["latitude"], r["longitude"], r["name"], r.get("country", "")
+
+    r = pick_best_result(results, country_hint)
+    country_code = (r.get("country_code") or "").upper()
+    country_name = country_display_name(country_code, r.get("country", ""))
+    return (
+        r["latitude"],
+        r["longitude"],
+        r["name"],
+        country_name,
+        country_code,
+    )
 
 
 def get_weather_data(lat: float, lon: float) -> dict:
@@ -63,13 +145,15 @@ def process_request(ch, method, props, body):
     city = body.decode("utf-8").strip()
     logger.info("Processing request for: %s", city)
     try:
-        lat, lon, name, country = get_coordinates(city)
+        lat, lon, name, country, country_code = get_coordinates(city)
         data = get_weather_data(lat, lon)
         current = data["current_weather"]
         code = int(current["weathercode"])
         result = {
             "city": name,
             "country": country,
+            "country_code": country_code,
+            "flag": country_flag(country_code),
             "latitude": round(lat, 4),
             "longitude": round(lon, 4),
             "temperature": current["temperature"],
@@ -79,7 +163,10 @@ def process_request(ch, method, props, body):
             "is_day": bool(current.get("is_day", 1)),
             "time": current["time"],
         }
-        logger.info("Success: %s → %.1f°C, %s", name, result["temperature"], result["condition"])
+        logger.info(
+            "Success: %s, %s → %.1f°C, %s",
+            name, country, result["temperature"], result["condition"],
+        )
     except Exception as exc:
         logger.error("Error for '%s': %s", city, exc)
         result = {"error": str(exc)}

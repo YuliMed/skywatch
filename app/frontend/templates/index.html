@@ -283,11 +283,11 @@
 
     <form method="POST" class="compare-form">
       <div class="field">
-        <label for="city_a">City A 🇮🇱</label>
+        <label for="city_a">City A</label>
         <input type="text" id="city_a" name="city_a" placeholder="Tel Aviv" value="{{ city_a }}" autocomplete="off">
       </div>
       <div class="field">
-        <label for="city_b">City B 🇬🇧</label>
+        <label for="city_b">City B</label>
         <input type="text" id="city_b" name="city_b" placeholder="London" value="{{ city_b }}" autocomplete="off">
       </div>
       <button type="submit">Compare</button>
@@ -299,11 +299,11 @@
 
     {% if submitted and (weather_a or weather_b) %}
     <div class="results">
-      {% macro weather_card(label, weather) %}
+      {% macro weather_card(slot, weather) %}
       <div class="card">
-        <div class="card-label">{{ label }}</div>
         {% if weather and 'error' not in weather %}
-        <div class="city-name">{{ weather.city }}</div>
+        <div class="card-label">{{ slot }}</div>
+        <div class="city-name">{{ weather.flag }} {{ weather.city }}</div>
         <div class="country">{{ weather.country }}</div>
         <div class="temp">{{ weather.temperature }}°</div>
         <div class="condition">{{ weather.condition }}</div>
@@ -312,15 +312,17 @@
           <div class="meta-item"><strong>{% if weather.is_day %}Day{% else %}Night{% endif %}</strong> local</div>
         </div>
         {% elif weather and 'error' in weather %}
+        <div class="card-label">{{ slot }}</div>
         <div class="card-error">{{ weather.error }}</div>
         {% else %}
+        <div class="card-label">{{ slot }}</div>
         <div class="card-error">No data</div>
         {% endif %}
       </div>
       {% endmacro %}
 
-      {{ weather_card("City A 🇮🇱", weather_a) }}
-      {{ weather_card("City B 🇬🇧", weather_b) }}
+      {{ weather_card("City A", weather_a) }}
+      {{ weather_card("City B", weather_b) }}
     </div>
     {% endif %}
 
